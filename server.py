@@ -44,6 +44,13 @@ while inputs:
             data = channel.recv(recvsize)
             if data != b"":
                 print("{}: {}".format(channel.getpeername(), data), file=sys.stderr)
+                if data == b"Accept": #Exit Room
+                    if channel.getpeername() not in accepted:
+                        accepted.append(channel.getpeername()[1])
+                        peer.sendall("Acknowledged")
+                        clients = clients + 1
+                    print(accepted)
+                    print(clients)
             else:
                 print('DBG> Closing', channel.getpeername(), file=sys.stderr)
                 inputs.remove(channel)
@@ -53,3 +60,4 @@ while inputs:
                 
 print("DBG> No more available channels, terminating loop", file=sys.stderr)
 server.close()
+
