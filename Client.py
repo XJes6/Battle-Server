@@ -7,11 +7,14 @@ def msglen(msg):
     for i in msg:
         count = count + 1
     return count
-host = '140.141.132.46'
+host = '140.141.132.47'
 port = 5011
 size = 2048
 s = socket.socket(socket.AF_INET,
                   socket.SOCK_STREAM)
+
+AcceptFlag = 0
+
 
 server = (host, port)
 print('ActiveHost0 about to connect to:', server)
@@ -26,17 +29,25 @@ while True:
     readset, writeset, exceptset = select.select([sys.stdin, s], [], [])
     for read in readset:
         if read is s:
-            recv = str(s.recv(size))
+            recv = (s.recv(size))
+            recv = (recv.decode("utf-8"))
             print(recv)
+
         else:
+            #--------------------------------------------------------
+            #Room State
+            #--------------------------------------------------------
             inroom = sys.stdin.readline()
-            while inroom != "Accept\n":
+            while inroom != "Accept\n" and AcceptFlag != 1:
                 print("Please type 'Accept' to proceed: ")
                 inroom = sys.stdin.readline()
+            AcceptFlag = 1
             s.sendall(inroom.encode("utf-8"))
-#--------------------------------------------------------
-#Room State
-#--------------------------------------------------------
+            # - - - - - - - - - - - - -
+            # Potential Chat Box State
+            # - - - - - - - - - - - - -
+
+
 #inroom = input("When you are ready to proceed type 'Accept' and hit enter: ")
 #while inroom != "Accept":
 #    s.sendall(inroom.encode())

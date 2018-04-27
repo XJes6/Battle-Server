@@ -4,7 +4,7 @@ import select
 import time
 
 
-host = '140.141.132.46'
+host = '140.141.132.47'
 port = 5011
 
 backlog = 5
@@ -52,15 +52,15 @@ while inputs:
                     if peer not in accepted:
                         accepted.append(peer)
                         clients = clients + 1
-                        peer.sendall(bytes("Acknowledged\t", "utf-8"))
+                        peer.sendall(bytes("Acknowledged\n", "utf-8"))
                     for peers in accepted:
                         numplayers = str(clients) + " players has joined the game. Please wait for " \
-                                            + str(MAXPLAYERS - clients) + " more to join...\t"
+                                            + str(MAXPLAYERS - clients) + " more to join...\n"
                         peers.sendall(bytes(numplayers, "utf-8"))
-                    #time.sleep(.5)
+
                 if clients == 3:
                     for peers in accepted:
-                        peers.sendall(bytes("Prepare Yourselves \t", "utf-8"))
+                        peers.sendall(bytes("- - - - -\nPrepare Yourselves \n- - - - - ", "utf-8"))
                     print("sent")
 
             else:
