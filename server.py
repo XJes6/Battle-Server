@@ -1,13 +1,16 @@
 import socket 
 import sys
 import select
+import time
 
-host = '140.141.225.187' 
-port = 50000 
+
+host = '140.141.132.46' 
+port = 5011
 
 backlog = 5 
 recvsize = 1024 
 
+MAXPLAYERS = 4
 # server's listener socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
 
@@ -21,8 +24,9 @@ print('PassiveHost0 listening on port', port)
 server.listen(backlog)
 
 inputs = [ server ]        # Maintain the list of all sockets/fds from which we may get input
+clients = 0
+accepted = []
 # inputs = [server, sys.stdin]
-
 while inputs:
     
     print("DBG> Waiting for next available input", file=sys.stderr)
@@ -44,13 +48,21 @@ while inputs:
             data = channel.recv(recvsize)
             if data != b"":
                 print("{}: {}".format(channel.getpeername(), data), file=sys.stderr)
-                if data == b"Accept": #Exit Room
-                    if channel.getpeername() not in accepted:
-                        accepted.append(channel.getpeername()[1])
-                        peer.sendall("Acknowledged")
+                if data == b"Accept": #Exit Room State
+                    if peer not in accepted:
+                        accepted.append(peer)
                         clients = clients + 1
-                    print(accepted)
-                    print(clients)
+                        peer.sendall(bytes("Acknowledged\t", "utf-8"))
+                    for peers in accepted:
+                        numplayers = str(clients) + " players has joined the game. Please wait for " \
+                                            + str(MAXPLAYERS - clients) + " more to join...\t"
+                        peers.sendall(bytes(numplayers, "utf-8"))
+                    #time.sleep(.5)
+                if clients == 1:
+                    for peers in accepted:
+                        peers.sendall(bytes("Prepare Yourselves \t", "utf-8"))
+                    print("sent")
+                    
             else:
                 print('DBG> Closing', channel.getpeername(), file=sys.stderr)
                 inputs.remove(channel)
