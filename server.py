@@ -26,6 +26,8 @@ server.listen(backlog)
 inputs = [ server ]        # Maintain the list of all sockets/fds from which we may get input
 clients = 0
 accepted = []
+AClients = []
+inputs.append(sys.stdin)
 # inputs = [server, sys.stdin]
 while inputs:
 
@@ -44,19 +46,34 @@ while inputs:
             peer, addr = server.accept()
             print('Accepted connection from', addr, file=sys.stderr)
             inputs.append(peer)
+        elif channel is sys.stdin:
+            inroom = sys.stdin.readline()
+            for peers in accepted:
+                peers.sendall(inroom.encode())
         else:
             data = channel.recv(recvsize)
             if data != b"":
                 print("{}: {}".format(channel.getpeername(), data), file=sys.stderr)
                 if data == b'Accept\n': #Exit Room State
-                    if peer not in accepted:
-                        accepted.append(peer)
+                    client = channel.getpeername()
+                    print(peer) #TODO we need to be able to distinguish between clients using the same socket
+                    print(" - - - - - - - \n")
+                    print(client)
+                    if client not in accepted:
+                        peer.sendall(bytes("- - - - - - -\nAcknowledged |\n- - - - - - -\n", "utf-8"))
+                        accepted.append(channel.getpeername())
+                        AClients.append(peer)
                         clients = clients + 1
-                        peer.sendall(bytes("Acknowledged\n", "utf-8"))
-                    for peers in accepted:
+                    print(" - - - - - - - \n")
+                    for peers in AClients:
                         numplayers = str(clients) + " players has joined the game. Please wait for " \
                                             + str(MAXPLAYERS - clients) + " more to join...\n"
                         peers.sendall(bytes(numplayers, "utf-8"))
+
+                #Chat?
+                for peers in AClients:
+                    if peer != peers and data != b'Accept\n':
+                        peers.sendall(data)
 
                 if clients == 3:
                     for peers in accepted:

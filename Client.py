@@ -31,7 +31,7 @@ while True:
         if read is s:
             recv = (s.recv(size))
             recv = (recv.decode("utf-8"))
-            print(recv)
+            print(recv[0:-1])
 
         else:
             #--------------------------------------------------------
@@ -43,9 +43,6 @@ while True:
                 inroom = sys.stdin.readline()
             AcceptFlag = 1
             s.sendall(inroom.encode("utf-8"))
-            # - - - - - - - - - - - - -
-            # Potential Chat Box State
-            # - - - - - - - - - - - - -
 
 
 #inroom = input("When you are ready to proceed type 'Accept' and hit enter: ")
