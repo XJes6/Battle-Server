@@ -7,7 +7,7 @@ def msglen(msg):
     for i in msg:
         count = count + 1
     return count
-host = '140.141.132.53'
+host = '140.141.132.47'
 port = 5011
 size = 2048
 s = socket.socket(socket.AF_INET,
