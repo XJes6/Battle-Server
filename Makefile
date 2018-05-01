@@ -1,15 +1,8 @@
-CC = gcc
-CFLAGS =
-
-# Add any header files you've added here.
-HDRS = 
-# Add any source files you've added here.
+$(CC) = gcc
 SRCS = $(wildcard *.c)
-OBJS = $(patsubst %.c,%.o,$(SRCS))
+PROGS = $(patsubst %.c,%,$(SRCS))
 
-all: $(OBJS)
+all: $(PROGS)
 
-make: $(SRC)
-	$(CC) $(CFLAGS) -o make $(OBJS)
-clean:
-	rm -f .*.d *.o $(TAR) *~ make
+%: %.c
+	$(CC) $(CFLAGS)  -o $@ $<
