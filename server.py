@@ -4,7 +4,7 @@ import select
 import time
 
 
-host = '140.141.132.47'
+host = '140.141.132.53'
 port = 5011
 
 backlog = 5
@@ -56,14 +56,18 @@ while inputs:
                 print("{}: {}".format(channel.getpeername(), data), file=sys.stderr)
                 if data == b'Accept\n': #Exit Room State
                     client = channel.getpeername()
+                    print("- - - - Peer- - - - ")
                     print(peer) #TODO we need to be able to distinguish between clients using the same socket
                     print(" - - - - - - - \n")
+                    print("- - - - Client- - - - ")
                     print(client)
+                    print(" - - - - - - - \n")
                     if client not in accepted:
                         peer.sendall(bytes("- - - - - - -\nAcknowledged |\n- - - - - - -\n", "utf-8"))
                         accepted.append(channel.getpeername())
                         AClients.append(peer)
                         clients = clients + 1
+                        print("I am here\n")
                     print(" - - - - - - - \n")
                     for peers in AClients:
                         numplayers = str(clients) + " players has joined the game. Please wait for " \
