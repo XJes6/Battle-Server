@@ -13,6 +13,7 @@
 #include <netdb.h>
 
 #define PORT "888188"   // port we're listening on
+#define STDIN 0
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -33,8 +34,9 @@ int main(void)
     struct sockaddr_storage remoteaddr; // client address
     socklen_t addrlen;
 
-    char buf[256];    // buffer for client data
-    int nbytes;
+    char buf[1024];    // buffer for client data
+    char msg[1024];    // buffer for STDIN
+    int nbytes, msgbytes;
 
 	char remoteIP[INET6_ADDRSTRLEN];
 
@@ -88,7 +90,7 @@ int main(void)
 
     // add the listener to the master set
     FD_SET(listener, &master);
-
+    FD_SET(STDIN, &master);
     // keep track of the biggest file descriptor
     fdmax = listener; // so far, it's this one
 
@@ -104,6 +106,7 @@ int main(void)
         for(i = 0; i <= fdmax; i++) {
             if (FD_ISSET(i, &read_fds)) { // we got one!!
                 if (i == listener) {
+                    printf("i: %i\n", i);
                     // handle new connections
                     addrlen = sizeof remoteaddr;
 					newfd = accept(listener,
@@ -124,14 +127,42 @@ int main(void)
 								remoteIP, INET6_ADDRSTRLEN),
 							newfd);
                     }
-                } else {
+                } else if (FD_ISSET(STDIN, &read_fds)) {
+                    printf("i: %i\n", i);
+                    memset(msg, 0, sizeof(msg));
+                    msgbytes = read(STDIN, msg, sizeof(msg));
+                    for(j = 0; j <= fdmax; j++) {
+                            // send to everyone!
+                            if (FD_ISSET(j, &master)) {
+                                // except the listener and ourselves
+                                if (j != listener && j != i) {
+                                    if (send(j, msg, msgbytes, 0) == -1) {
+                                        perror("send");
+                                    }
+                                    else {
+                                        printf("sent\n");
+                                    }
+                                    }
+                                }
+                            }
+                        }
+                
+                else
+                {
+                    printf("i: %i\n", i);
                     // handle data from a client
-                    if ((nbytes = recv(i, buf, sizeof buf, 0)) <= 0) {
+                    if ((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0 || \
+                    (msgbytes = recv(i, msg, sizeof(msg), 0)) <= 0) {
                         // got error or connection closed by client
                         if (nbytes == 0) {
                             // connection closed
                             printf("selectserver: socket %d hung up\n", i);
-                        } else {
+                        } else if (msg == "Stop\n")
+                        {
+                            printf("Server Closing")
+                        }
+                        else
+                        {
                             perror("recv");
                         }
                         close(i); // bye!
