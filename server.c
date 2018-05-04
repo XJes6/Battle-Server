@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORT "888188"   // port we're listening on
+#define PORT "9034"   // port we're listening on
 #define STDIN 0
 
 // get sockaddr, IPv4 or IPv6:
@@ -41,7 +41,7 @@ int main(void)
 	char remoteIP[INET6_ADDRSTRLEN];
 
     int yes=1;        // for setsockopt() SO_REUSEADDR, below
-    int i, j, rv;
+    int i, j, rv, STDIN_flag;
 
 	struct addrinfo hints, *ai, *p;
 
@@ -106,7 +106,7 @@ int main(void)
         for(i = 0; i <= fdmax; i++) {
             if (FD_ISSET(i, &read_fds)) { // we got one!!
                 if (i == listener) {
-                    printf("i: %i\n", i);
+                    printf("Listener: %i\n", i);
                     // handle new connections
                     addrlen = sizeof remoteaddr;
 					newfd = accept(listener,
@@ -127,8 +127,8 @@ int main(void)
 								remoteIP, INET6_ADDRSTRLEN),
 							newfd);
                     }
-                } else if (FD_ISSET(STDIN, &read_fds)) {
-                    printf("i: %i\n", i);
+                } else if (FD_ISSET(STDIN, &read_fds)) 
+                {
                     memset(msg, 0, sizeof(msg));
                     msgbytes = read(STDIN, msg, sizeof(msg));
                     for(j = 0; j <= fdmax; j++) {
@@ -142,27 +142,26 @@ int main(void)
                                     else {
                                         printf("sent\n");
                                     }
-                                    }
                                 }
                             }
                         }
+                }
                 
                 else
                 {
-                    printf("i: %i\n", i);
+
+                    printf("ELSE: %i\n", i);
                     printf("msgbytes = %i\n", msgbytes);
+                    nbytes = recv(i, buf, sizeof(buf), 0);
+                    printf("nbytes: %i\n", nbytes);
                     // handle data from a client
-                    if ((nbytes = recv(i, buf, sizeof(buf), 0)) == 1 || \
-                    (msgbytes <= 0)) {
+                    if (nbytes == 2) {
                         // got error or connection closed by client
-                        if (nbytes == 0) 
+                        if (nbytes == 2) 
                         {
                             // connection closed
                             printf("selectserver: socket %d hung up\n", i);
-                        } else if (msg == "Stop\n")
-                        {
-                            printf("Server Closing");
-                        }
+                        } 
                         else
                         {
                             perror("recv");
@@ -171,18 +170,18 @@ int main(void)
                         FD_CLR(i, &master); // remove from master set
                     } else {
                         // we got some data from a client
-                        for(j = 0; j <= fdmax; j++) {
+                        printf("msg: %s\n", buf);
+                            for(j = 0; j <= fdmax-1; j++) {
                             // send to everyone!
-                            if (FD_ISSET(j, &master)) {
+                                if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves
-                                if (j != listener && j != i) {
-                                    if (send(j, buf, nbytes, 0) == -1) {
-                                        perror("send");
+                                    if (j != listener && j != i) {
+                                        send(j, buf, nbytes, 0);
                                     }
                                 }
-                            }
                         }
                     }
+                    printf("finished, waiting\n");
                 } // END handle data from client
             } // END got new incoming connection
         } // END looping through file descriptors
