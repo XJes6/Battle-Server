@@ -36,12 +36,13 @@ int main(void)
 
     char buf[1024];    // buffer for client data
     char msg[1024];    // buffer for STDIN
+    char resp[1024];   // buffer for responses
     int nbytes, msgbytes;
 
 	char remoteIP[INET6_ADDRSTRLEN];
 
     int yes=1;        // for setsockopt() SO_REUSEADDR, below
-    int i, j, rv, STDIN_flag;
+    int i, j, rv;
 
 	struct addrinfo hints, *ai, *p;
 
@@ -152,14 +153,15 @@ int main(void)
 
                     printf("ELSE: %i\n", i);
                     printf("msgbytes = %i\n", msgbytes);
+                    memset(buf, 0, sizeof(buf));
                     nbytes = recv(i, buf, sizeof(buf), 0);
                     printf("nbytes: %i\n", nbytes);
                     // handle data from a client
-                    if (nbytes == 2) {
+                    if (nbytes <= 1) {
                         // got error or connection closed by client
-                        if (nbytes == 2) 
+                        if (nbytes <= 1) 
                         {
-                            // connection closed
+                            // connecton closed
                             printf("selectserver: socket %d hung up\n", i);
                         } 
                         else
@@ -170,8 +172,16 @@ int main(void)
                         FD_CLR(i, &master); // remove from master set
                     } else {
                         // we got some data from a client
-                        printf("msg: %s\n", buf);
-                            for(j = 0; j <= fdmax-1; j++) {
+                        printf("msg: %s", buf);
+                        if (strcmp(buf, "Accept\n") == 0)
+                        {
+                            printf("here\n");
+                            memset(resp, 0, sizeof(resp));
+                            strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
+                            send(i, resp, sizeof(resp), 0);
+
+                        }
+                            for(j = 0; j <= fdmax; j++) {
                             // send to everyone!
                                 if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves

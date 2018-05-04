@@ -42,7 +42,7 @@ while True:
                 print("Please type 'Accept' to proceed: ")
                 inroom = sys.stdin.readline()
             AcceptFlag = 1
-            s.sendall(inroom.encode("utf-8"))
+            s.sendall(inroom.encode())
 
 
 #inroom = input("When you are ready to proceed type 'Accept' and hit enter: ")
