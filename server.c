@@ -150,16 +150,18 @@ int main(void)
                 else
                 {
                     printf("i: %i\n", i);
+                    printf("msgbytes = %i\n", msgbytes);
                     // handle data from a client
-                    if ((nbytes = recv(i, buf, sizeof(buf), 0)) <= 0 || \
-                    (msgbytes = recv(i, msg, sizeof(msg), 0)) <= 0) {
+                    if ((nbytes = recv(i, buf, sizeof(buf), 0)) == 1 || \
+                    (msgbytes <= 0)) {
                         // got error or connection closed by client
-                        if (nbytes == 0) {
+                        if (nbytes == 0) 
+                        {
                             // connection closed
                             printf("selectserver: socket %d hung up\n", i);
                         } else if (msg == "Stop\n")
                         {
-                            printf("Server Closing")
+                            printf("Server Closing");
                         }
                         else
                         {
