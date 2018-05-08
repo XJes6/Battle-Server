@@ -42,7 +42,7 @@ int main(void)
 	char remoteIP[INET6_ADDRSTRLEN];
 
     int yes=1;        // for setsockopt() SO_REUSEADDR, below
-    int i, j, rv;
+    int i, j, rv, clients;
 
 	struct addrinfo hints, *ai, *p;
 
@@ -107,7 +107,6 @@ int main(void)
         for(i = 0; i <= fdmax; i++) {
             if (FD_ISSET(i, &read_fds)) { // we got one!!
                 if (i == listener) {
-                    printf("Listener: %i\n", i);
                     // handle new connections
                     addrlen = sizeof remoteaddr;
 					newfd = accept(listener,
@@ -128,7 +127,7 @@ int main(void)
 								remoteIP, INET6_ADDRSTRLEN),
 							newfd);
                     }
-                } else if (FD_ISSET(STDIN, &read_fds)) 
+                } else if (FD_ISSET(STDIN, &read_fds)) //SERVER TYPES
                 {
                     memset(msg, 0, sizeof(msg));
                     msgbytes = read(STDIN, msg, sizeof(msg));
@@ -151,13 +150,12 @@ int main(void)
                 else
                 {
 
-                    printf("ELSE: %i\n", i);
                     printf("msgbytes = %i\n", msgbytes);
                     memset(buf, 0, sizeof(buf));
                     nbytes = recv(i, buf, sizeof(buf), 0);
                     printf("nbytes: %i\n", nbytes);
                     // handle data from a client
-                    if (nbytes <= 1) {
+                    if (nbytes <= 1) { //CONNECTION KILLED
                         // got error or connection closed by client
                         if (nbytes <= 1) 
                         {
@@ -170,18 +168,40 @@ int main(void)
                         }
                         close(i); // bye!
                         FD_CLR(i, &master); // remove from master set
-                    } else {
-                        // we got some data from a client
-                        printf("msg: %s", buf);
-                        if (strcmp(buf, "Accept\n") == 0)
+                    } else { 
+                        // we got some data from a client //TODO Make a Swtich for Accept, Attack, Guard, Heal
+                        if (strcmp(buf, "Accept\n") == 0) //TODO Add a struct for Clients
                         {
-                            printf("here\n");
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
                             send(i, resp, sizeof(resp), 0);
+                            clients++;
+                            memset(resp, 0, sizeof(resp));
+                            strcpy(resp, "\n- - - - - - -Chat- - - - - - -\n");
+                            send(i, resp, sizeof(resp), 0);
 
                         }
-                            for(j = 0; j <= fdmax; j++) {
+                        if (clients == 2) //Start Game
+                        {
+                            memset(resp, 0, sizeof(resp));
+                            strcpy(resp, "\n- - - - - - -All Players Accounted for- - - - - - -\nPrepare Yourselves\n");
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener && j != i) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
+                            //TODO Add in game mechanics here
+                            //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
+                            //2. Set up the Move Actions ([Attack], Guard, Heal)
+                            //3. Send these options to all Clients
+                            //4. Add a queue 
+                        }
+                            //Chat in Room
+                            for(j = 0; j <= fdmax; j++) 
+                            { 
                             // send to everyone!
                                 if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves

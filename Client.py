@@ -24,7 +24,7 @@ inputs = [ server ]
 if s == None: #if the server is not connected: Exit
     sys.exit()
 print("Welcome to Battle-Server")
-print("When you are ready to proceed type 'Accept' and hit enter: ")
+print("When you are ready to proceed type 'Accept' and hit enter\n")
 while True:
     readset, writeset, exceptset = select.select([sys.stdin, s], [], [])
     for read in readset:
