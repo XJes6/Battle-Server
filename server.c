@@ -249,16 +249,31 @@ int main(void)
                             //------------------------------
                             // END FUNCTION FOR MONSTER CREATION
                             //------------------------------
-
+                            strcpy(resp, "|||||||||||||||||| \n ||||||||||||||||||\n ||||||||||||||||||");
                             //------------------------------
                             // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
+                            // Contents for each player already made the following 
+                            // info will be attached once function created
                             //------------------------------
-			    // testing
-
-
+			               
+                            Client Player1;
+                            Player1.Name = "Boi 1";
+                            Player1.HP = 100;
+                            Player1.PATK = 8;
+                            Player1.fd = i;
+                            memset(resp, 0, sizeof(resp));
+                            strcpy(resp, "Client name: Boi 1 \n Attack: 8\n Health : 100");
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
 
                             //------------------------------
-                            // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
+                            // END FUNCTION FOR CLIENT STATS (ATTACK / HP)
                             //------------------------------
 
 
