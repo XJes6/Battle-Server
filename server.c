@@ -249,7 +249,9 @@ int main(void)
                             //------------------------------
                             // END FUNCTION FOR MONSTER CREATION
                             //------------------------------
+                            
                             strcpy(resp, "|||||||||||||||||| \n ||||||||||||||||||\n ||||||||||||||||||");
+
                             //------------------------------
                             // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
                             // Contents for each player already made the following 
