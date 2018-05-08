@@ -196,6 +196,11 @@ int main(void)
                         // we got some data from a client //TODO Make a ifs for Accept, Attack, Guard, Heal
                         if (strcmp(buf, "Accept\n") == 0) //TODO Add a struct for Clients
                         {
+
+                            //------------------------------
+                            // DEVELOP ACCEPT FUNCTION
+                            //------------------------------
+
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
                             send(i, resp, sizeof(resp), 0);
@@ -204,11 +209,20 @@ int main(void)
                             strcpy(resp, "\n- - - - - - -Chat- - - - - - -");
                             send(i, resp, sizeof(resp), 0);
 
+                            //------------------------------
+                            // END ACCEPT FUNCTION
+                            //------------------------------
                         }
                         if (clients == 2) //Start Game
                         {
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "\n- - - - - - -All Players Accounted for- - - - - - -\nPrepare Yourselves\n");
+                            strcpy(resp, "\n- - - - - - -End Chat- - - - - -\n- - - - - - -\
+                            All Players Accounted for- - - - - - -\n\nPrepare Yourselves\n");
+
+                            //------------------------------
+                            // DEVELOP FUNCTION FOR MONSTER CREATION
+                            //------------------------------
+
                             //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
                             Monster M;
                             M.Name = "Your Boi";
@@ -232,6 +246,26 @@ int main(void)
                                     }
                                 }
                             }
+                            //------------------------------
+                            // END FUNCTION FOR MONSTER CREATION
+                            //------------------------------
+
+                            //------------------------------
+                            // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
+                            //------------------------------
+
+
+
+                            //------------------------------
+                            // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
+                            //------------------------------
+
+
+
+                            //------------------------------
+                            // DEVELOP FUNCTION FOR CHAT (figure out where to put)
+                            //------------------------------
+
                             //TODO Add in game mechanics here
                             //2. Set up the Move Actions ([Attack], Guard, Heal)
                             //3. Send these options to all Clients
