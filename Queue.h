@@ -12,7 +12,7 @@ typedef struct Command
 {
     int fd;
     char cmd[1024];
-    int time;
+    int Time;
 }Command;
 
 typedef struct Queue
@@ -42,42 +42,51 @@ Queue * createQueue(int maxElements)
         return Q;
 }
 
-void Dequeue(Queue *Q)
+Command Dequeue(Queue *Q)
 {
+        Command C;
         if(Q->size!=0)
         {
                 Q->size--;
                 Q->front++;
-                /* As we fill elements in circular fashion */
-                if(Q->front==Q->capacity)
-                {
-                        Q->front=0;
-                }
+                memset(C.cmd, 0, sizeof(C.cmd));
+                int fd, Time;
+                strcpy(C.cmd, Q->elements->cmd);
+                C.fd = Q->elements->fd;
+                C.Time = Q->elements->Time;
         }
-        return;
+        return C;
+}
+
+char * front(Queue *Q)
+{
+        if(Q->size != 0)
+        {
+                return Q->elements[Q->front].cmd;
+        } 
+        return NULL; 
+
 }
 
 void Enqueue(Queue *Q, char *command, int fd)
 {
-        //char *p = (char *) malloc(strlen(element)+1);*/
-
-        /* If the Queue is full, we cannot push an element into it as there is no space for it.*/
+        /* If the Queue is full, No space.*/
         if(Q->size == Q->capacity)
         {
-                printf("Queue is Full\n");
+                printf("Queue Cannot take anymore commands\n");
         }
         else
         {
                 Q->size++;
+                Q->rear++;
                 memset(Q->elements->cmd, 0, sizeof(Q->elements->cmd));
-                strcpy(Q->elements->cmd, command);
+                strcpy(Q->elements[Q->rear].cmd, command);
                 struct timeval tv;
                 gettimeofday(&tv, NULL);
-                Q->elements->time = tv.tv_sec * 1000 + tv.tv_usec/1000;
-                Q->elements->fd = fd;
+                Q->elements[Q->rear].Time = tv.tv_sec * 1000 + tv.tv_usec/1000;
+                Q->elements[Q->rear].fd = fd;
 
 
         }
-        printf("")
         return;
 }

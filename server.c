@@ -16,12 +16,35 @@
 #define PORT "9034"   // port we're listening on
 #define STDIN 0
 
+typedef struct Monster
+{
+    char* Name;
+    int HP;
+    int PATK;
+    
+}Monster;
+
+typedef struct Client
+{
+    char* Name;
+    int HP;
+    int PATK;
+    int fd;
+    
+}Client;
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
 
 		return &(((struct sockaddr_in*)sa)->sin_addr);
 
+}
+
+int randrnge(int lower, int upper)
+{
+    int i;
+    int num = (rand() % (upper - lower + 1)) + lower;
+    return num;
 }
 
 int main(void)
@@ -150,6 +173,7 @@ int main(void)
                 
                 else
                 {
+
                     printf("msgbytes = %i\n", msgbytes);
                     memset(buf, 0, sizeof(buf));
                     nbytes = recv(i, buf, sizeof(buf), 0);
@@ -169,7 +193,7 @@ int main(void)
                         close(i); // bye!
                         FD_CLR(i, &master); // remove from master set
                     } else { 
-                        // we got some data from a client //TODO Make a Swtich for Accept, Attack, Guard, Heal
+                        // we got some data from a client //TODO Make a ifs for Accept, Attack, Guard, Heal
                         if (strcmp(buf, "Accept\n") == 0) //TODO Add a struct for Clients
                         {
                             memset(resp, 0, sizeof(resp));
@@ -177,7 +201,7 @@ int main(void)
                             send(i, resp, sizeof(resp), 0);
                             clients++;
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "\n- - - - - - -Chat- - - - - - -\n");
+                            strcpy(resp, "\n- - - - - - -Chat- - - - - - -");
                             send(i, resp, sizeof(resp), 0);
 
                         }
@@ -185,31 +209,45 @@ int main(void)
                         {
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -All Players Accounted for- - - - - - -\nPrepare Yourselves\n");
+                            //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
+                            Monster M;
+                            M.Name = "Your Boi";
+                            M.HP = randrnge(500, 800);
+                            M.PATK = randrnge(5, 10);
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
-                                    if (j != listener && j != i) {
+                                    if (j != listener) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
+                            memset(resp, 0, sizeof(resp));
+                            strcpy(resp, "Monster name: Your Boi \n Attack range: 5-10\n Health range: 500-800");
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener) {
                                         send(j, resp, sizeof(resp), 0);
                                     }
                                 }
                             }
                             //TODO Add in game mechanics here
-                            //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
                             //2. Set up the Move Actions ([Attack], Guard, Heal)
                             //3. Send these options to all Clients
                             //4. Add a queue 
                         }
                             //Chat in Room
-                            for(j = 0; j <= fdmax; j++) 
-                            { 
+                            //for(j = 0; j <= fdmax; j++) 
+                            //{ 
                             // send to everyone!
-                                if (FD_ISSET(j, &master)) {
+                                //if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves
-                                    if (j != listener && j != i) {
-                                        send(j, buf, nbytes, 0);
-                                    }
-                                }
-                        }
+                                    //if (j != listener && j != i) {
+                                    //    send(j, buf, nbytes, 0);
+                                    //}
+                               // }
+                        //}
                     }
                     printf("finished, waiting\n");
                 } // END handle data from client
