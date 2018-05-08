@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include "Queue.h"
 
 #define PORT "9034"   // port we're listening on
 #define STDIN 0
@@ -149,7 +150,6 @@ int main(void)
                 
                 else
                 {
-
                     printf("msgbytes = %i\n", msgbytes);
                     memset(buf, 0, sizeof(buf));
                     nbytes = recv(i, buf, sizeof(buf), 0);
