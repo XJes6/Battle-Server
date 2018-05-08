@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 /*Queue has five properties.
 
@@ -20,7 +21,7 @@ typedef struct Queue
         int size;
         int front;
         int rear;
-        Command **elements;
+        Command *elements;
 }Queue;
 
 
@@ -56,7 +57,7 @@ void Dequeue(Queue *Q)
         return;
 }
 
-void Enqueue(Queue *Q, char *element, int fd, int time)
+void Enqueue(Queue *Q, char *command, int fd)
 {
         //char *p = (char *) malloc(strlen(element)+1);*/
 
@@ -68,14 +69,15 @@ void Enqueue(Queue *Q, char *element, int fd, int time)
         else
         {
                 Q->size++;
-                Q->rear = Q->rear + 1;
-                /* As we fill the queue in circular fashion */
-                if(Q->rear == Q->capacity)
-                {
-                        Q->rear = 0;
-                }
-                /* Insert the element in its rear side */ 
-                strcpy(Q->elements[Q->], element);
+                memset(Q->elements->cmd, 0, sizeof(Q->elements->cmd));
+                strcpy(Q->elements->cmd, command);
+                struct timeval tv;
+                gettimeofday(&tv, NULL);
+                Q->elements->time = tv.tv_sec * 1000 + tv.tv_usec/1000;
+                Q->elements->fd = fd;
+
+
         }
+        printf("")
         return;
 }
