@@ -31,6 +31,7 @@ typedef struct Client
     int HP;
     int PATK;
     int fd;
+    int DEF;
     
 }Client;
 
@@ -43,19 +44,15 @@ void *get_in_addr(struct sockaddr *sa)
 
 }
 
-int randrnge(int lower, int upper)
-{
-    int i;
-    int num = (rand() % (upper - lower + 1)) + lower;
-    return num;
-}
-
 int main(void)
 {
     fd_set master;    // master file descriptor list
     fd_set read_fds;  // temp file descriptor list for select()
     int fdmax;        // maximum file descriptor number
+    Queue *history = createQueue(20);
 
+    Client Player1;
+    Monster M;
     List fdlist;
     initlist(&fdlist);
 
@@ -168,9 +165,6 @@ int main(void)
                                     if (send(j, msg, msgbytes, 0) == -1) {
                                         perror("send");
                                     }
-                                    else {
-                                        printf("sent\n");
-                                    }
                                 }
                             }
                         }
@@ -200,7 +194,6 @@ int main(void)
                     } else { 
                         int inside = 2;
                         inside = contains(&fdlist, i);
-                        printf("inside: %i\n", inside);
                         // we got some data from a client //TODO Make a ifs for Accept, Attack, Guard, Heal
                         if (strcmp(buf, "Accept\n") == 0 && inside == 0) //TODO Add a struct for Clients
                         {
@@ -232,10 +225,9 @@ int main(void)
                             //------------------------------
 
                             //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
-                            Monster M;
                             M.Name = "Your Boi";
-                            M.HP = randrnge(500, 800);
-                            M.PATK = randrnge(5, 10);
+                            M.HP = 800;
+                            M.PATK = 30;
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -245,7 +237,7 @@ int main(void)
                                 }
                             }
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Monster name: Your Boi \n Attack range: 5-10\n Health range: 500-800\n");
+                            strcpy(resp, "Monster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -266,13 +258,13 @@ int main(void)
                             // info will be attached once function created
                             //------------------------------
 			               
-                            Client Player1;
                             Player1.Name = "Boi 1";
                             Player1.HP = 100;
                             Player1.PATK = 8;
+                            Player1.DEF = 10;
                             Player1.fd = i;
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Player Stats:\nClient name: Boi 1 \n Attack: 8\n Health : 100");
+                            strcpy(resp, "Player Stats:\nClient name: Boi 1 \nAttack: 8\nHealth : 100");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -286,19 +278,53 @@ int main(void)
                             // END FUNCTION FOR CLIENT STATS (ATTACK / HP)
                             //------------------------------
 
-
+                            //SEND OPTIONS TO ALL CLIENTS
 
                             //------------------------------
                             // DEVELOP FUNCTION FOR CHAT (figure out where to put)
                             //------------------------------
 
                             //TODO Add in game mechanics here
-                            //2. Set up the Move Actions ([Attack], Guard, Heal)
+                            //2. Set up the Move Actions ([Attack], Guard, Heal) DONE
                             //3. Send these options to all Clients
                             //4. Add a queue 
                             }
                         }
-                        else
+                        else if (strcmp(buf, "Attack\n") == 0)
+                        {
+                            printf("Health was: %i\n", M.HP);
+                            M.HP = M.HP - Player1.PATK;
+                            memset(resp, 0, sizeof(resp));
+                            sprintf(resp, "Monster: %s\n  Health %d\n", M.Name, M.HP );
+                            printf("%s\n", resp);
+                            Enqueue(history, resp, i); 
+                        }
+                        else if (strcmp(buf, "Guard\n") == 0)
+                        {
+                            printf("Player1 Health was: %i\n", Player1.HP);
+                            Player1.HP = (Player1.HP - (M.PATK / 10));
+                            memset(resp, 0, sizeof(resp));
+                            sprintf(resp, "Player1: %s\nHealth: %d\n", Player1.Name, Player1.HP);
+                            printf("%s\n", resp);
+                            Enqueue(history, resp, i);  
+                        }
+                        else if (strcmp(buf, "Heal\n") == 0)
+                        {
+                            printf("Player1 Health was: %i\n", Player1.HP);
+                            if (Player1.HP + (Player1.HP*0.33) >= Player1.HP)
+                            {
+                                Player1.HP = 100;
+                            }
+                            else
+                            {
+                                Player1.HP = (Player1.HP*0.33);
+                            }
+                            memset(resp, 0, sizeof(resp));
+                            sprintf(resp, "Player1: %s\n  Health %d\n", Player1.Name, Player1.HP );
+                            printf("%s\n", resp);
+                            Enqueue(history, resp, i);  
+                        }
+                        else 
                         {
                             //Chat in Room
                             for(j = 0; j <= fdmax; j++) 

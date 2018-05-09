@@ -42,6 +42,10 @@ while True:
                 print("Please type 'Accept' to proceed: ")
                 inroom = sys.stdin.readline()
             AcceptFlag = 1
+            if inroom == "Attack\n" | inroom == "Guard\n" | inroom == "Heal\n":
+                recv = (s.recv(size))
+                recv = (recv.decode("utf-8"))
+                print(recv[0:-1])
             s.sendall(inroom.encode())
 
 
