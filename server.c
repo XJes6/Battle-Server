@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "Queue.h"
+#include "List.h"
 
 #define PORT "9034"   // port we're listening on
 #define STDIN 0
@@ -32,6 +33,8 @@ typedef struct Client
     int fd;
     
 }Client;
+
+
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -53,6 +56,9 @@ int main(void)
     fd_set read_fds;  // temp file descriptor list for select()
     int fdmax;        // maximum file descriptor number
 
+    List fdlist;
+    initlist(&fdlist);
+
     int listener;     // listening socket descriptor
     int newfd;        // newly accept()ed socket descriptor
     struct sockaddr_storage remoteaddr; // client address
@@ -71,8 +77,7 @@ int main(void)
 	struct addrinfo hints, *ai, *p;
 
     FD_ZERO(&master);    // clear the master and temp sets
-    FD_ZERO(&read_fds);
-
+    FD_ZERO(&read_fds); 
 	// get us a socket and bind it
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -193,9 +198,13 @@ int main(void)
                         close(i); // bye!
                         FD_CLR(i, &master); // remove from master set
                     } else { 
+                        int inside = 2;
+                        inside = contains(&fdlist, i);
+                        printf("inside: %i\n", inside);
                         // we got some data from a client //TODO Make a ifs for Accept, Attack, Guard, Heal
-                        if (strcmp(buf, "Accept\n") == 0) //TODO Add a struct for Clients
+                        if (strcmp(buf, "Accept\n") == 0 && inside == 0) //TODO Add a struct for Clients
                         {
+                            append(&fdlist, i);
 
                             //------------------------------
                             // DEVELOP ACCEPT FUNCTION
@@ -212,12 +221,11 @@ int main(void)
                             //------------------------------
                             // END ACCEPT FUNCTION
                             //------------------------------
-                        }
-                        if (clients == 2) //Start Game
-                        {
+                            printf("clients: %i\n", clients);
+                            if (clients == 2) //Start Game
+                            {
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "\n- - - - - - -End Chat- - - - - -\n- - - - - - -\
-                            All Players Accounted for- - - - - - -\n\nPrepare Yourselves\n");
+                            strcpy(resp, "\n- - - - - - -End Chat- - - - - -\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n");
 
                             //------------------------------
                             // DEVELOP FUNCTION FOR MONSTER CREATION
@@ -237,7 +245,7 @@ int main(void)
                                 }
                             }
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Monster name: Your Boi \n Attack range: 5-10\n Health range: 500-800");
+                            strcpy(resp, "Monster name: Your Boi \n Attack range: 5-10\n Health range: 500-800\n");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -264,7 +272,7 @@ int main(void)
                             Player1.PATK = 8;
                             Player1.fd = i;
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Client name: Boi 1 \n Attack: 8\n Health : 100");
+                            strcpy(resp, "Player Stats:\nClient name: Boi 1 \n Attack: 8\n Health : 100");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -288,18 +296,22 @@ int main(void)
                             //2. Set up the Move Actions ([Attack], Guard, Heal)
                             //3. Send these options to all Clients
                             //4. Add a queue 
+                            }
                         }
+                        else
+                        {
                             //Chat in Room
-                            //for(j = 0; j <= fdmax; j++) 
-                            //{ 
+                            for(j = 0; j <= fdmax; j++) 
+                            { 
                             // send to everyone!
-                                //if (FD_ISSET(j, &master)) {
+                                if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves
-                                    //if (j != listener && j != i) {
-                                    //    send(j, buf, nbytes, 0);
-                                    //}
-                               // }
-                        //}
+                                    if (j != listener && j != i) {
+                                        send(j, buf, nbytes, 0);
+                                    }
+                                }
+                            }
+                        }
                     }
                     printf("finished, waiting\n");
                 } // END handle data from client
