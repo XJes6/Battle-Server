@@ -472,7 +472,7 @@ int main(void)
                             {
                                 if (FD_ISSET(j, &master)) {
                                     if (j != listener && j != i) {
-                                        send(j, resp, sizeof(resp), 0);
+                                        send(j, resp, sizeof(resp), 0); 
                                     }
                                 }
                             } 
