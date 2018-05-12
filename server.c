@@ -12,7 +12,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "Queue.h"
-#include "List.h"
+#include "ctcp_linked_list.c"
 
 #define PORT "9034"   // port we're listening on
 #define STDIN 0
@@ -35,6 +35,74 @@ typedef struct Client
     
 }Client;
 
+void MonsterGen(Monster M, char *resp, int i, int j, int fdmax, int listener, fd_set master)
+{
+    M.Name = "Your Boi";
+    M.HP = 800;
+    M.PATK = 30;
+    memset(resp, 0, sizeof(resp));
+    strcpy(resp, "Monster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
+    for(j = 0; j <= fdmax; j++) 
+    {
+        if (FD_ISSET(j, &master)) {
+            if (j != listener) {
+                send(j, resp, sizeof(resp), 0);
+            }
+        }
+    }
+}
+
+void acceptance(char *resp, int i)
+{
+    memset(resp, 0, sizeof(resp));
+    strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
+    send(i, resp, sizeof(resp), 0);
+    memset(resp, 0, sizeof(resp));
+    strcpy(resp, "\n- - - - - - -Chat- - - - - - -");
+    send(i, resp, sizeof(resp), 0);
+}
+
+void PlayerGen(Client P, char *resp, int i, int j, int fdmax, int listener, fd_set master)
+{
+    //------------------------------
+    // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
+    // Contents for each player already made the following 
+    // info will be attached once function created
+    //------------------------------
+    
+    P.Name = "Boi 1";
+    P.HP = 100;
+    P.PATK = 8;
+    P.DEF = 10;
+    P.fd = i;
+    memset(resp, 0, sizeof(resp));
+    strcpy(resp, "Player Stats:\nClient name: Boi 1 \nAttack: 8\nHealth : 100");
+    for(j = 0; j <= fdmax; j++) 
+    {
+        if (FD_ISSET(j, &master)) {
+            if (j != listener) {
+                send(j, resp, sizeof(resp), 0);
+            }
+        }
+    }
+}
+
+void System(Queue *history, Client Player, Monster M)
+{
+        //system plays
+        for(int o = 0; o < 2; o++)
+        {
+            if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
+            if (strcmp(front(history), "Defend")== 0){Player.HP = (Player.HP - (M.PATK / 10));} 
+            if (strcmp(front(history), "Heal") == 0)
+            {
+                if (Player.HP + (Player.HP*0.33) >= Player.HP){Player.HP = 100;}
+                else {Player.HP = (Player.HP*0.33);} 
+            }
+            Dequeue(history);
+        }
+        Player.HP = Player.HP - M.PATK;
+}
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -49,12 +117,15 @@ int main(void)
     fd_set master;    // master file descriptor list
     fd_set read_fds;  // temp file descriptor list for select()
     int fdmax;        // maximum file descriptor number
-    Queue *history = createQueue(20);
+    Queue *history = createQueue(4);
 
-    Client Player1;
+    Client Player;
     Monster M;
-    List fdlist;
-    initlist(&fdlist);
+    linked_list_t *fdlist;
+    linked_list_t *Players;
+    fdlist = ll_create();
+    Players = ll_create();
+    Command choice;
 
     int listener;     // listening socket descriptor
     int newfd;        // newly accept()ed socket descriptor
@@ -191,53 +262,43 @@ int main(void)
                         }
                         close(i); // bye!
                         FD_CLR(i, &master); // remove from master set
+                        ll_node_t *node = fdlist->head;
+                        ll_remove(fdlist, node);
+                        clients--;
                     } else { 
                         int inside = 2;
-                        inside = contains(&fdlist, i);
+                        inside = ll_find(fdlist, i);
                         // we got some data from a client //TODO Make a ifs for Accept, Attack, Guard, Heal
                         if (strcmp(buf, "Accept\n") == 0 && inside == 0) //TODO Add a struct for Clients
                         {
-                            append(&fdlist, i);
-
-                            //------------------------------
-                            // DEVELOP ACCEPT FUNCTION
-                            //------------------------------
+                            ll_add(fdlist, &i, i);
+                            clients++;
 
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
                             send(i, resp, sizeof(resp), 0);
-                            clients++;
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -Chat- - - - - - -");
                             send(i, resp, sizeof(resp), 0);
 
-                            //------------------------------
-                            // END ACCEPT FUNCTION
-                            //------------------------------
-                            printf("clients: %i\n", clients);
                             if (clients == 2) //Start Game
                             {
                             memset(resp, 0, sizeof(resp));
                             strcpy(resp, "\n- - - - - - -End Chat- - - - - -\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n");
-
-                            //------------------------------
-                            // DEVELOP FUNCTION FOR MONSTER CREATION
-                            //------------------------------
-
-                            //1. Randomize Monster (Name, Attack, Health, Random Client to attack)
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
+                            //MonsterGen(M, resp, i, j, fdmax, listener, master); //sends Monster Stats
                             M.Name = "Your Boi";
                             M.HP = 800;
                             M.PATK = 30;
-                            for(j = 0; j <= fdmax; j++) 
-                            {
-                                if (FD_ISSET(j, &master)) {
-                                    if (j != listener) {
-                                        send(j, resp, sizeof(resp), 0);
-                                    }
-                                }
-                            }
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Monster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
+                            strcpy(resp, "---\nMonster name: Your Boi \nAttack range: 30\nHealth range: 800\n");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -246,25 +307,14 @@ int main(void)
                                     }
                                 }
                             }
-                            //------------------------------
-                            // END FUNCTION FOR MONSTER CREATION
-                            //------------------------------
-                            
-                            strcpy(resp, "|||||||||||||||||| \n ||||||||||||||||||\n ||||||||||||||||||");
-
-                            //------------------------------
-                            // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
-                            // Contents for each player already made the following 
-                            // info will be attached once function created
-                            //------------------------------
-			               
-                            Player1.Name = "Boi 1";
-                            Player1.HP = 100;
-                            Player1.PATK = 8;
-                            Player1.DEF = 10;
-                            Player1.fd = i;
+			                //PlayerGen(Player, resp, i, j, fdmax, listener, master); //sends Player Stats
+                            Player.HP = 100;
+                            Player.PATK = 8;
+                            Player.DEF = 10;
+                            Player.fd = i;
+                            ll_add(Players, &Player, Player.fd);
                             memset(resp, 0, sizeof(resp));
-                            strcpy(resp, "Player Stats:\nClient name: Boi 1 \nAttack: 8\nHealth : 100");
+                            strcpy(resp, "Player Stats:\nPlayer name: The Hero \nAttack: 8\nHealth : 100\n");
                             for(j = 0; j <= fdmax; j++) 
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -273,56 +323,212 @@ int main(void)
                                     }
                                 }
                             }
-
-                            //------------------------------
-                            // END FUNCTION FOR CLIENT STATS (ATTACK / HP)
-                            //------------------------------
-
-                            //SEND OPTIONS TO ALL CLIENTS
-
-                            //------------------------------
-                            // DEVELOP FUNCTION FOR CHAT (figure out where to put)
-                            //------------------------------
-
-                            //TODO Add in game mechanics here
-                            //2. Set up the Move Actions ([Attack], Guard, Heal) DONE
-                            //3. Send these options to all Clients
-                            //4. Add a queue 
                             }
                         }
                         else if (strcmp(buf, "Attack\n") == 0)
                         {
-                            printf("Health was: %i\n", M.HP);
-                            M.HP = M.HP - Player1.PATK;
+                            Enqueue(history, buf);
+                            printf("Queue length: %i\n", Qlength(history));
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Monster: %s\n  Health %d\n", M.Name, M.HP );
-                            printf("%s\n", resp);
-                            Enqueue(history, resp, i); 
+                            sprintf(resp, "Client %i has chosen to ATTACK\n", i);
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener && j != i) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
+                            if (Qlength(history) == 2)
+                            {
+                                for(int o = 0; o < 2; o++)
+                                {
+                                    if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
+                                    if (strcmp(front(history), "Defend")== 0){Player.HP = (Player.HP - (M.PATK / 10));} 
+                                    if (strcmp(front(history), "Heal") == 0)
+                                    {
+                                        if (Player.HP + (Player.HP*0.33) >= 100)
+                                        {Player.HP = 100;}
+                                        else 
+                                        {Player.HP = (Player.HP*0.33);} 
+                                    }
+                                    Dequeue(history);
+                                }
+                                Player.HP = Player.HP - M.PATK;
+                                //SEND Update TO PLAYERS
+                                memset(resp, 0, sizeof(resp));
+                                sprintf(resp, "- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n", M.HP, Player.HP);
+                                for(j = 0; j <= fdmax; j++) 
+                                {
+                                    if (FD_ISSET(j, &master)) {
+                                        if (j != listener) {
+                                            send(j, resp, sizeof(resp), 0);
+                                        }
+                                    }
+                                }
+                                Queue *history = createQueue(4);
+                                if(M.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Win.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(Player.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Lose.\nBetter luck next time.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        else if (strcmp(buf, "Guard\n") == 0)
+                        else if (strcmp(buf, "Defend\n") == 0)
                         {
-                            printf("Player1 Health was: %i\n", Player1.HP);
-                            Player1.HP = (Player1.HP - (M.PATK / 10));
+                            Enqueue(history, buf);
+                            printf("Queue length: %i\n", Qlength(history));
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Player1: %s\nHealth: %d\n", Player1.Name, Player1.HP);
-                            printf("%s\n", resp);
-                            Enqueue(history, resp, i);  
+                            sprintf(resp, "Client %i has chosen to DEFEND\n", i);
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener && j != i) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            }
+                            if (Qlength(history) == 2)
+                            {
+                                for(int o = 0; o < 2; o++)
+                                {
+                                    if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
+                                    if (strcmp(front(history), "Defend")== 0){Player.HP = (Player.HP - (M.PATK / 10));} 
+                                    if (strcmp(front(history), "Heal") == 0)
+                                    {
+                                        if (Player.HP + (Player.HP*0.33) >= Player.HP){Player.HP = 100;}
+                                        else {Player.HP = (Player.HP*0.33);} 
+                                    }
+                                    Dequeue(history);
+                                }
+                                Player.HP = Player.HP - M.PATK;
+                                //SEND Update TO PLAYERS
+                                memset(resp, 0, sizeof(resp));
+                                sprintf(resp, "- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n", M.HP, Player.HP);
+                                for(j = 0; j <= fdmax; j++) 
+                                {
+                                    if (FD_ISSET(j, &master)) {
+                                        if (j != listener) {
+                                            send(j, resp, sizeof(resp), 0);
+                                        }
+                                    }
+                                }
+                                Queue *history = createQueue(4);
+                                if(M.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Win.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(Player.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Lose.\nBetter luck next time.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }  
                         }
                         else if (strcmp(buf, "Heal\n") == 0)
                         {
-                            printf("Player1 Health was: %i\n", Player1.HP);
-                            if (Player1.HP + (Player1.HP*0.33) >= Player1.HP)
-                            {
-                                Player1.HP = 100;
-                            }
-                            else
-                            {
-                                Player1.HP = (Player1.HP*0.33);
-                            }
+                            printf("Queue length: %i\n", Qlength(history));
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Player1: %s\n  Health %d\n", Player1.Name, Player1.HP );
-                            printf("%s\n", resp);
-                            Enqueue(history, resp, i);  
+                            sprintf(resp, "Client %i has chosen to HEAL\n", i);
+                            for(j = 0; j <= fdmax; j++) 
+                            {
+                                if (FD_ISSET(j, &master)) {
+                                    if (j != listener && j != i) {
+                                        send(j, resp, sizeof(resp), 0);
+                                    }
+                                }
+                            } 
+                            if (Qlength(history) == 2)
+                            {
+                                for(int o = 0; o < 2; o++)
+                                {
+                                    if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
+                                    if (strcmp(front(history), "Defend")== 0){Player.HP = (Player.HP - (M.PATK / 10));} 
+                                    if (strcmp(front(history), "Heal") == 0)
+                                    {
+                                        if (Player.HP + (Player.HP*0.33) >= Player.HP){Player.HP = 100;}
+                                        else {Player.HP = (Player.HP*0.33);} 
+                                    }
+                                    Dequeue(history);
+                                }
+                                Player.HP = Player.HP - M.PATK;
+                                //SEND Update TO PLAYERS
+                                memset(resp, 0, sizeof(resp));
+                                sprintf(resp, "- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n", M.HP, Player.HP);
+                                for(j = 0; j <= fdmax; j++) 
+                                {
+                                    if (FD_ISSET(j, &master)) {
+                                        if (j != listener) {
+                                            send(j, resp, sizeof(resp), 0);
+                                        }
+                                    }
+                                }
+                                Queue *history = createQueue(4);
+                                if(M.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Win.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                                if(Player.HP <= 0)
+                                {
+                                    memset(resp, 0, sizeof(resp));
+                                    strcpy(resp, "You Lose.\nBetter luck next time.");
+                                    for(j = 0; j <= fdmax; j++) 
+                                    {
+                                        if (FD_ISSET(j, &master)) {
+                                            if (j != listener) {
+                                                send(j, resp, sizeof(resp), 0);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         else 
                         {

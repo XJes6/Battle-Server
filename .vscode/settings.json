@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "string.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "ctcp_linked_list.h": "c",
+        "initializer_list": "c"
     }
 }

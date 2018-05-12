@@ -42,7 +42,7 @@ Queue * createQueue(int maxElements)
         return Q;
 }
 
-Command Dequeue(Queue *Q)
+void Dequeue(Queue *Q)
 {
         Command C;
         if(Q->size!=0)
@@ -55,10 +55,10 @@ Command Dequeue(Queue *Q)
                 C.fd = Q->elements->fd;
                 C.Time = Q->elements->Time;
         }
-        return C;
+        return;
 }
 
-char * front(Queue *Q)
+char *front(Queue *Q)
 {
         if(Q->size != 0)
         {
@@ -68,7 +68,7 @@ char * front(Queue *Q)
 
 }
 
-void Enqueue(Queue *Q, char *command, int fd)
+void Enqueue(Queue *Q, char *command)
 {
         /* If the Queue is full, No space.*/
         if(Q->size == Q->capacity)
@@ -79,14 +79,19 @@ void Enqueue(Queue *Q, char *command, int fd)
         {
                 Q->size++;
                 Q->rear++;
-                memset(Q->elements->cmd, 0, sizeof(Q->elements->cmd));
+                int len = strlen(command);
+                command[len-1] = '\0';
+                memset(Q->elements[Q->rear].cmd, 0, sizeof(Q->elements[Q->rear].cmd));
                 strcpy(Q->elements[Q->rear].cmd, command);
-                struct timeval tv;
-                gettimeofday(&tv, NULL);
-                Q->elements[Q->rear].Time = tv.tv_sec * 1000 + tv.tv_usec/1000;
-                Q->elements[Q->rear].fd = fd;
+                //struct timeval tv;
+                //gettimeofday(&tv, NULL);
+                //Q->elements[Q->rear].Time = tv.tv_sec * 1000 + tv.tv_usec/1000;
 
 
         }
         return;
+}
+int Qlength(Queue *Q)
+{
+        return Q->size;
 }

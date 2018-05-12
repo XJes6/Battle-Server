@@ -1,7 +1,5 @@
 #include "Queue.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 
 void main(void)
 {
@@ -9,8 +7,11 @@ void main(void)
     int fd = 1;
     char a[1024] = "Accept\n";
     char b[1024] = "Attack\n";
-    Enqueue(Q, a, 1);
+    Enqueue(Q, a);
     printf("Front element is %s\n", front(Q));
-    Enqueue(Q, b, 1);
+    Enqueue(Q, b);
+    printf("Front element is %s\n", front(Q));
+    Command d;
+    Dequeue(Q);
     printf("Front element is %s\n", front(Q));
 }
