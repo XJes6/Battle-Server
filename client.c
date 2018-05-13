@@ -95,7 +95,6 @@ int main(int argc, char *argv[])
 	{
 		read_fds = master;
 		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1){
-			perror("select");
 			exit(4);
 		}
 		for(i = 0; i<=fdmax; i++){
@@ -107,7 +106,7 @@ int main(int argc, char *argv[])
 					{
 						FD_SET(STDIN, &master);
 					}
-					if(numbytes <= 1){close(sockfd);}
+					if(numbytes <= 0){close(sockfd);}
 				}
 				else
 				{

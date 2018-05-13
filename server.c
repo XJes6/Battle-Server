@@ -54,7 +54,7 @@ Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set mast
 {
     char resp[MAXDATASIZE];
     M.Name = "Your Boi";
-    M.HP = 800;
+    M.HP = 500;
     M.PATK = 30;
     memset(resp, 0, sizeof(resp));
     strcpy(resp, "\nMonster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
@@ -87,11 +87,11 @@ Client PlayerGen(Client P, int i, int j, int fdmax, int listener, fd_set master)
     //------------------------------
     char resp[MAXDATASIZE];
     P.HP = 100;
-    P.PATK = 10;
+    P.PATK = 30;
     P.DEF = 10;
     P.fd = i;
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "Player Stats:\nClient name: The Hero \nAttack: 10\nHealth : 100\n - - - - - - - - \n");
+    strcpy(resp, "Player Stats:\nClient name: The Hero \nAttack: 30\nHealth : 100\n - - - - - - - - \n");
     for(j = 0; j <= fdmax; j++)
     {
         if (FD_ISSET(j, &master)) {
@@ -250,7 +250,6 @@ int main(void)
     for(;;) {
         read_fds = master; // copy it
         if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1) {
-            perror("select");
             exit(4);
         }
 
@@ -285,7 +284,25 @@ int main(void)
                     char c[MAXDATASIZE];
                     memset(c, 0, sizeof(c));
                     sprintf(c, "SERVER: %s", msg);
-                    for(j = 0; j <= fdmax; j++) {
+                    if(strcmp(msg, "Stop\n")== 0)
+                    {
+                        strcpy(c, "Server is now closing");
+                        for(j = 0; j <= fdmax; j++) {
+                            // send to everyone!
+                            if (FD_ISSET(j, &master)) {
+                                // except the listener and ourselves
+                                if (j != listener && j != i) {
+                                    if (send(j, c, sizeof(c), 0) == -1) {
+                                        perror("send");
+                                    }
+                                }
+                            }
+                        }
+                        close(i);
+                    }
+                    else
+                    {
+                        for(j = 0; j <= fdmax; j++) {
                             // send to everyone!
                             if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves
@@ -296,6 +313,7 @@ int main(void)
                                 }
                             }
                         }
+                    }
                 }
 
                 else
@@ -480,7 +498,6 @@ int main(void)
                             }
                         }
                     }
-                    fprintf(stderr, "finished, waiting\n");
                 } // END handle data from client
             } // END got new incoming connection
         } // END looping through file descriptors
