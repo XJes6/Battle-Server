@@ -42,7 +42,7 @@ Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set mast
     M.HP = 800;
     M.PATK = 30;
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "Monster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
+    strcpy(resp, "\nMonster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
     for(j = 0; j <= fdmax; j++)
     {
         if (FD_ISSET(j, &master)) {
@@ -61,7 +61,7 @@ void acceptance(int i)
     strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
     send(i, resp, sizeof(resp), 0);
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "\n- - - - - - -Chat- - - - - - -");
+    strcpy(resp, "\n- - - - - - -Chat Active- - - - - - -");
     send(i, resp, sizeof(resp), 0);
 }
 
@@ -73,13 +73,12 @@ Client PlayerGen(Client P, int i, int j, int fdmax, int listener, fd_set master)
     // info will be attached once function created
     //------------------------------
     char resp[1024];
-    P.Name = "Boi 1";
     P.HP = 100;
-    P.PATK = 8;
+    P.PATK = 10;
     P.DEF = 10;
     P.fd = i;
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "Player Stats:\nClient name: Boi 1 \nAttack: 8\nHealth : 100\n - - - - - - - - ");
+    strcpy(resp, "Player Stats:\nClient name: The Hero \nAttack: 8\nHealth : 100\n - - - - - - - - ");
     for(j = 0; j <= fdmax; j++)
     {
         if (FD_ISSET(j, &master)) {
@@ -150,14 +149,13 @@ int main(void)
     fd_set read_fds;  // temp file descriptor list for select()
     int fdmax;        // maximum file descriptor number
     Queue *history = createQueue(4);
-
+    int turn_count = 0;
     Client Player;
     Monster M;
     linked_list_t *fdlist;
     linked_list_t *Players;
     fdlist = ll_create();
     Players = ll_create();
-    Command choice;
 
     int listener;     // listening socket descriptor
     int newfd;        // newly accept()ed socket descriptor
@@ -223,7 +221,7 @@ int main(void)
     FD_SET(STDIN, &master);
     // keep track of the biggest file descriptor
     fdmax = listener; // so far, it's this one
-
+    fprintf(stderr, "Server Has Started\n");
     // main loop
     for(;;) {
         read_fds = master; // copy it
@@ -249,7 +247,7 @@ int main(void)
                         if (newfd > fdmax) {    // keep track of the max
                             fdmax = newfd;
                         }
-                        printf("selectserver: new connection from %s on "
+                        fprintf(stderr, "selectserver: new connection from %s on "
                             "socket %d\n",
 							inet_ntop(remoteaddr.ss_family,
 								get_in_addr((struct sockaddr*)&remoteaddr),
@@ -260,12 +258,15 @@ int main(void)
                 {
                     memset(msg, 0, sizeof(msg));
                     msgbytes = read(STDIN, msg, sizeof(msg));
+                    char c[1024];
+                    memset(c, 0, sizeof(c));
+                    sprintf(c, "SERVER: %s", msg);
                     for(j = 0; j <= fdmax; j++) {
                             // send to everyone!
                             if (FD_ISSET(j, &master)) {
                                 // except the listener and ourselves
                                 if (j != listener && j != i) {
-                                    if (send(j, msg, msgbytes, 0) == -1) {
+                                    if (send(j, c, msgbytes+10, 0) == -1) {
                                         perror("send");
                                     }
                                 }
@@ -284,7 +285,7 @@ int main(void)
                         if (nbytes <= 1)
                         {
                             // connecton closed
-                            printf("selectserver: socket %d hung up\n", i);
+                            fprintf(stderr, "selectserver: socket %d hung up\n", i);
                         }
                         else
                         {
@@ -305,10 +306,10 @@ int main(void)
                             clients++;
                             acceptance(i);
 
-                            if (clients == 2) //Start Game
+                            if (clients == 4) //Start Game
                             {
                               memset(resp, 0, sizeof(resp));
-                              strcpy(resp, "\n- - - - - - -End Chat- - - - - -\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n- - - - - - - ");
+                              strcpy(resp, "\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n- - - - - - - ");
                               for(j = 0; j <= fdmax; j++)
                               {
                                   if (FD_ISSET(j, &master)) {
@@ -334,18 +335,19 @@ int main(void)
                                     }
                                 }
                             }
-                            if (Qlength(history) == 2)
+                            if (Qlength(history) == 4)
                             {
-                                for(int o = 0; o <= Qlength(history); o++)
+                                for(int o = 0; o = Qlength(history); o++)
                                 {
                                     if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
                                     Player = Player_stats(history, Player, M);
                                     history = Dequeue(history);
+                                    printf("size: %i\n", Qlength(history));
                                 }
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
@@ -361,7 +363,7 @@ int main(void)
                         {
                             Enqueue(history, buf);
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Client %i has chosen to DEFEND\n", i);
+                            sprintf(resp, "Client %i has chosen to DEFEND", i);
                             for(j = 0; j <= fdmax; j++)
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -370,18 +372,18 @@ int main(void)
                                     }
                                 }
                             }
-                            if (Qlength(history) == 2)
+                            if (Qlength(history) == 4)
                             {
-                                for(int o = 0; o < 2; o++)
+                                for(int o = 0; o = Qlength(history); o++)
                                 {
                                     if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
                                     Player = Player_stats(history, Player, M);
-                                    history = Dequeue(history);
+                                    history = Dequeue(history);\
                                 }
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - ", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
@@ -398,7 +400,7 @@ int main(void)
                         {
                             Enqueue(history, buf);
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Client %i has chosen to HEAL\n", i);
+                            sprintf(resp, "Client %i has chosen to HEAL", i);
                             for(j = 0; j <= fdmax; j++)
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -407,9 +409,9 @@ int main(void)
                                     }
                                 }
                             }
-                            if (Qlength(history) == 2)
+                            if (Qlength(history) == 4)
                             {
-                                for(int o = 0; o < 2; o++)
+                                for(int o = 0; o = Qlength(history); o++)
                                 {
                                     if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
                                     Player = Player_stats(history, Player, M);
@@ -418,7 +420,7 @@ int main(void)
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Your Boi \nMonster has %i of HP left\nYou have %i of HP left\n", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss\nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
@@ -451,7 +453,7 @@ int main(void)
                             }
                         }
                     }
-                    printf("finished, waiting\n");
+                    fprintf(stderr, "finished, waiting\n");
                 } // END handle data from client
             } // END got new incoming connection
         } // END looping through file descriptors

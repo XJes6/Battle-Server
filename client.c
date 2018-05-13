@@ -11,12 +11,11 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-
 #include <arpa/inet.h>
 
 #define PORT "9034" // the port client will be connecting to 
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once 
+#define MAXDATASIZE 1024 // max number of bytes we can get at once 
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -35,13 +34,19 @@ int main(int argc, char *argv[])
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	char s[INET6_ADDRSTRLEN];
+	fd_set master;
+	fd_set read_fds;
+	int fdmax;
+
+	FD_ZERO(&master);
+	FD_ZERO(read_fds);
 
 	if (argc != 2) {
 	    fprintf(stderr,"usage: client hostname\n");
 	    exit(1);
 	}
 
-	memset(&hints, 0, sizeof hints);
+	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
@@ -78,14 +83,23 @@ int main(int argc, char *argv[])
 
 	freeaddrinfo(servinfo); // all done with this structure
 
+	FD_SET(STDIN, &master);
+	fdmax = sockfd;
+
+	//main loop
+	for(;;)
+	{
+		read_fds = msater;
+		if (select(fdmax+1 ))
+	}
+
 	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
 	    perror("recv");
 	    exit(1);
 	}
+	buf[numbytes-3] = '\0';
 
-	buf[numbytes] = '\0';
-
-	printf("client: received '%s'\n",buf);
+	printf("client: received %s\n",buf);
 
 	close(sockfd);
 

@@ -3,6 +3,8 @@
         "string.h": "c",
         "typeinfo": "c",
         "ctcp_linked_list.h": "c",
-        "initializer_list": "c"
+        "initializer_list": "c",
+        "unistd.h": "c",
+        "types.h": "c"
     }
 }
