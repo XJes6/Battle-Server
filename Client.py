@@ -42,7 +42,6 @@ while True:
                 print("Please type 'Accept' to proceed: ")
                 inroom = sys.stdin.readline()
             AcceptFlag = 1
-            print("Options: Attack, Defend, Heal")
             #if ((inroom == "Attack\n") | (inroom == "Defend\n") | (inroom == "Heal\n")):
             #    s.sendall(inroom.encode())
             #    recv = (s.recv(size))

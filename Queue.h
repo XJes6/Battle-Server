@@ -42,7 +42,7 @@ Queue * createQueue(int maxElements)
         return Q;
 }
 
-void Dequeue(Queue *Q)
+Queue * Dequeue(Queue *Q)
 {
         Command C;
         if(Q->size!=0)
@@ -55,7 +55,7 @@ void Dequeue(Queue *Q)
                 C.fd = Q->elements->fd;
                 C.Time = Q->elements->Time;
         }
-        return;
+        return Q;
 }
 
 char *front(Queue *Q)
@@ -63,8 +63,8 @@ char *front(Queue *Q)
         if(Q->size != 0)
         {
                 return Q->elements[Q->front].cmd;
-        } 
-        return NULL; 
+        }
+        return NULL;
 
 }
 

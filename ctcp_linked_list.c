@@ -47,6 +47,7 @@ ll_node_t *ll_add(linked_list_t *list, void *object, int fd) {
     list->tail->next = node;
     node->prev = list->tail;
     list->tail = node;
+    list->tail->fd = fd;
   }
 
   list->length++;
