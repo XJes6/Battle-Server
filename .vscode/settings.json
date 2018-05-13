@@ -5,6 +5,7 @@
         "ctcp_linked_list.h": "c",
         "initializer_list": "c",
         "unistd.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "istream": "c"
     }
 }

@@ -14,8 +14,8 @@
 #include <arpa/inet.h>
 
 #define PORT "9034" // the port client will be connecting to 
-
-#define MAXDATASIZE 1024 // max number of bytes we can get at once 
+#define STDIN 0 //STDIN
+#define MAXDATASIZE 2048 // max number of bytes we can get at once 
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -29,17 +29,19 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-	int sockfd, numbytes;  
+	int sockfd, numbytes, msgbytes;
+	int AcceptFlag = 0;  
 	char buf[MAXDATASIZE];
+	char msg[MAXDATASIZE];
 	struct addrinfo hints, *servinfo, *p;
-	int rv;
+	int rv, i;
 	char s[INET6_ADDRSTRLEN];
 	fd_set master;
 	fd_set read_fds;
 	int fdmax;
 
 	FD_ZERO(&master);
-	FD_ZERO(read_fds);
+	FD_ZERO(&read_fds);
 
 	if (argc != 2) {
 	    fprintf(stderr,"usage: client hostname\n");
@@ -83,25 +85,52 @@ int main(int argc, char *argv[])
 
 	freeaddrinfo(servinfo); // all done with this structure
 
+	FD_SET(sockfd, &master);
 	FD_SET(STDIN, &master);
 	fdmax = sockfd;
-
+	fprintf(stderr, "Welcome to Battle-Server\n");
+	fprintf(stderr, "When you are ready to proceed type 'Accept' and hit enter\n");
 	//main loop
 	for(;;)
 	{
-		read_fds = msater;
-		if (select(fdmax+1 ))
+		read_fds = master;
+		if (select(fdmax+1, &read_fds, NULL, NULL, NULL) == -1){
+			perror("select");
+			exit(4);
+		}
+		for(i = 0; i<=fdmax; i++){
+			if (FD_ISSET(i, &read_fds)) {
+				if(i == sockfd){
+					numbytes = recv(sockfd, buf, MAXDATASIZE, 0);
+					printf("%s\n",buf);
+					if(numbytes == 256)
+					{
+						FD_SET(STDIN, &master);
+					}
+					if(numbytes <= 1){close(sockfd);}
+				}
+				else
+				{
+					memset(msg, 0, sizeof(msg));
+					msgbytes = read(STDIN, msg, sizeof(msg));
+					msg[msgbytes] = '\0';
+					while(strcmp(msg, "Accept\n") != 0 && AcceptFlag != 1)
+					{
+						fprintf(stderr, "Please type 'Accept' to proceed: \n");
+						memset(msg, 0, sizeof(msg));
+						msgbytes = read(STDIN, msg, sizeof(msg));
+					}
+					AcceptFlag = 1;
+					if(strcmp(msg, "Attack\n") == 0 || strcmp(msg, "Defend\n") == 0 || strcmp(msg, "Heal\n") == 0)
+					{
+						fprintf(stderr, "Please Wait for Other Players\n");
+						FD_CLR(STDIN, &master);
+					}
+					send(sockfd, msg, msgbytes, 0);
+					if(msgbytes <= 1){close(sockfd);}
+				}
+			}
+		}
 	}
-
-	if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-	    perror("recv");
-	    exit(1);
-	}
-	buf[numbytes-3] = '\0';
-
-	printf("client: received %s\n",buf);
-
-	close(sockfd);
-
 	return 0;
 }

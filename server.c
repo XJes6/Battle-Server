@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -15,7 +16,8 @@
 #include "ctcp_linked_list.c"
 
 #define PORT "9034"   // port we're listening on
-#define STDIN 0
+#define STDIN 0 //STDIN
+#define MAXDATASIZE 256
 
 typedef struct Monster
 {
@@ -35,9 +37,22 @@ typedef struct Client
 
 }Client;
 
+void delay(int number_of_seconds)
+{
+    // Converting time into milli_seconds
+    int milli_seconds = 1000 * number_of_seconds;
+ 
+    // Stroing start time
+    clock_t start_time = clock();
+ 
+    // looping till required time is not acheived
+    while (clock() < start_time + milli_seconds)
+        ;
+}
+
 Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set master)
 {
-    char resp[1024];
+    char resp[MAXDATASIZE];
     M.Name = "Your Boi";
     M.HP = 800;
     M.PATK = 30;
@@ -48,6 +63,7 @@ Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set mast
         if (FD_ISSET(j, &master)) {
             if (j != listener) {
                 send(j, resp, sizeof(resp), 0);
+                delay(3);
             }
         }
     }
@@ -56,12 +72,9 @@ Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set mast
 
 void acceptance(int i)
 {
-    char resp[1024];
+    char resp[MAXDATASIZE];
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n");
-    send(i, resp, sizeof(resp), 0);
-    memset(resp, 0, sizeof(resp));
-    strcpy(resp, "\n- - - - - - -Chat Active- - - - - - -");
+    strcpy(resp, "\n- - - - - - -\nAcknowledged |\n- - - - - - -\n\n- - - - - - -Chat Active- - - - - - -\n");
     send(i, resp, sizeof(resp), 0);
 }
 
@@ -72,18 +85,19 @@ Client PlayerGen(Client P, int i, int j, int fdmax, int listener, fd_set master)
     // Contents for each player already made the following
     // info will be attached once function created
     //------------------------------
-    char resp[1024];
+    char resp[MAXDATASIZE];
     P.HP = 100;
     P.PATK = 10;
     P.DEF = 10;
     P.fd = i;
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "Player Stats:\nClient name: The Hero \nAttack: 8\nHealth : 100\n - - - - - - - - ");
+    strcpy(resp, "Player Stats:\nClient name: The Hero \nAttack: 10\nHealth : 100\n - - - - - - - - \n");
     for(j = 0; j <= fdmax; j++)
     {
         if (FD_ISSET(j, &master)) {
             if (j != listener) {
                 send(j, resp, sizeof(resp), 0);
+                delay(3);
             }
         }
     }
@@ -103,9 +117,9 @@ Client Player_stats(Queue *history, Client Player, Monster M)
         return Player;
 }
 
-void End_Game(Monster M, Client Player, int j, int fdmax, int listener, fd_set master)
+void End_Game(Monster M, Client Player, int j, int fdmax, int listener, fd_set master, int clients, linked_list_t *fdlist)
 {
-  char resp[1024];
+  char resp[MAXDATASIZE];
   if(M.HP <= 0)
   {
       memset(resp, 0, sizeof(resp));
@@ -114,7 +128,12 @@ void End_Game(Monster M, Client Player, int j, int fdmax, int listener, fd_set m
       {
           if (FD_ISSET(j, &master)) {
               if (j != listener) {
-                  send(j, resp, sizeof(resp), 0);
+                send(j, resp, sizeof(resp), 0);
+                close(j); // bye!
+                FD_CLR(j, &master); // remove from master set
+                ll_node_t *node = fdlist->head;
+                ll_remove(fdlist, node);
+                clients--;
               }
           }
       }
@@ -127,7 +146,12 @@ void End_Game(Monster M, Client Player, int j, int fdmax, int listener, fd_set m
       {
           if (FD_ISSET(j, &master)) {
               if (j != listener) {
-                  send(j, resp, sizeof(resp), 0);
+                send(j, resp, sizeof(resp), 0);
+                close(j); // bye!
+                FD_CLR(j, &master); // remove from master set
+                ll_node_t *node = fdlist->head;
+                ll_remove(fdlist, node);
+                clients--;
               }
           }
       }
@@ -148,10 +172,10 @@ int main(void)
     fd_set master;    // master file descriptor list
     fd_set read_fds;  // temp file descriptor list for select()
     int fdmax;        // maximum file descriptor number
-    Queue *history = createQueue(4);
-    int turn_count = 0;
-    Client Player;
-    Monster M;
+    Queue *history = createQueue(4); //Queue of Capacity 4
+    //int turn_count = 0;
+    Client Player;  //Player Creation
+    Monster M;      //Monster Creation
     linked_list_t *fdlist;
     linked_list_t *Players;
     fdlist = ll_create();
@@ -162,9 +186,9 @@ int main(void)
     struct sockaddr_storage remoteaddr; // client address
     socklen_t addrlen;
 
-    char buf[1024];    // buffer for client data
-    char msg[1024];    // buffer for STDIN
-    char resp[1024];   // buffer for responses
+    char buf[MAXDATASIZE];    // buffer for client data
+    char msg[MAXDATASIZE];    // buffer for STDIN
+    char resp[MAXDATASIZE];   // buffer for responses
     int nbytes, msgbytes;
 
 	char remoteIP[INET6_ADDRSTRLEN];
@@ -258,7 +282,7 @@ int main(void)
                 {
                     memset(msg, 0, sizeof(msg));
                     msgbytes = read(STDIN, msg, sizeof(msg));
-                    char c[1024];
+                    char c[MAXDATASIZE];
                     memset(c, 0, sizeof(c));
                     sprintf(c, "SERVER: %s", msg);
                     for(j = 0; j <= fdmax; j++) {
@@ -309,7 +333,7 @@ int main(void)
                             if (clients == 4) //Start Game
                             {
                               memset(resp, 0, sizeof(resp));
-                              strcpy(resp, "\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n- - - - - - - ");
+                              strcpy(resp, "\n- - - - - - -All Players Ready- - - - - - -\n\nPrepare Yourselves\n- - - - - - - \n");
                               for(j = 0; j <= fdmax; j++)
                               {
                                   if (FD_ISSET(j, &master)) {
@@ -319,14 +343,14 @@ int main(void)
                                   }
                               }
                               M = MonsterGen(M, i, j, fdmax, listener, master); //sends Monster Stats
-  			                      Player = PlayerGen(Player, i, j, fdmax, listener, master); //sends Player Stats
+  			                  Player = PlayerGen(Player, i, j, fdmax, listener, master); //sends Player Stats
                             }
                         }
                         else if (strcmp(buf, "Attack\n") == 0)
                         {
                             Enqueue(history, buf);
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Client %i has chosen to ATTACK", i);
+                            sprintf(resp, "Client %i has chosen to ATTACK\n", i);
                             for(j = 0; j <= fdmax; j++)
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -342,28 +366,28 @@ int main(void)
                                     if (strcmp(front(history), "Attack") == 0) {M.HP = M.HP - Player.PATK;}
                                     Player = Player_stats(history, Player, M);
                                     history = Dequeue(history);
-                                    printf("size: %i\n", Qlength(history));
                                 }
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - \n", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
                                         if (j != listener) {
                                             send(j, resp, sizeof(resp), 0);
+                                            delay(3);
                                         }
                                     }
                                 }
-                                End_Game(M, Player, j, fdmax, listener, master);
+                                End_Game(M, Player, j, fdmax, listener, master, clients, fdlist);
                             }
                         }
                         else if (strcmp(buf, "Defend\n") == 0)
                         {
                             Enqueue(history, buf);
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Client %i has chosen to DEFEND", i);
+                            sprintf(resp, "Client %i has chosen to DEFEND\n", i);
                             for(j = 0; j <= fdmax; j++)
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -383,24 +407,25 @@ int main(void)
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss \nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - \n", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
                                         if (j != listener) {
                                             send(j, resp, sizeof(resp), 0);
+                                            delay(3);
                                         }
                                     }
                                 }
 
-                              End_Game(M, Player, j, fdmax, listener, master);
+                              End_Game(M, Player, j, fdmax, listener, master, clients, fdlist);
                             }
                         }
                         else if (strcmp(buf, "Heal\n") == 0)
                         {
                             Enqueue(history, buf);
                             memset(resp, 0, sizeof(resp));
-                            sprintf(resp, "Client %i has chosen to HEAL", i);
+                            sprintf(resp, "Client %i has chosen to HEAL\n", i);
                             for(j = 0; j <= fdmax; j++)
                             {
                                 if (FD_ISSET(j, &master)) {
@@ -420,24 +445,26 @@ int main(void)
                                 Player.HP = Player.HP - M.PATK;
                                 //SEND Update TO PLAYERS
                                 memset(resp, 0, sizeof(resp));
-                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss\nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - - ", M.HP, Player.HP);
+                                sprintf(resp, "\n- - - - - UPDATE - - - - - \nMonster name: Slime Boss\nMonster has %i of HP left\nYou have %i of HP left\n - - - - - - - - - - - - - \n", M.HP, Player.HP);
                                 for(j = 0; j <= fdmax; j++)
                                 {
                                     if (FD_ISSET(j, &master)) {
                                         if (j != listener) {
                                             send(j, resp, sizeof(resp), 0);
+                                            delay(3);
                                         }
                                     }
                                 }
 
-                                End_Game(M, Player, j, fdmax, listener, master);
+                                End_Game(M, Player, j, fdmax, listener, master,  clients, fdlist);
                             }
                         }
                         else
                         {
-                            char c[1024];
+                            char c[MAXDATASIZE];
                             memset(c, 0, sizeof(c));
                             sprintf(c, "Chat: %s", buf);
+                            c[nbytes+5] = '\0';
                             //Chat in Room
                             for(j = 0; j <= fdmax; j++)
                             {
