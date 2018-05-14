@@ -2,18 +2,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-/*Queue has five properties.
 
-capacity stands for the maximum number of elements Queue can hold.
-  Size stands for the current size of the Queue and elements is the array of elements.
-  front is the index of first element (the index at which we remove the element)
-  rear is the index of last element (the index at which we insert the element) */
+/* Command has 3 properties
+   fd is the file descriptor.
+   cmd is a character array of the client's choice
+   Time is the time it was sent */
+
 typedef struct Command
 {
     int fd;
     char cmd[1024];
     int Time;
 }Command;
+
+/*Queue has five properties.
+
+  capacity stands for the maximum number of elements Queue can hold.
+  Size stands for the current size of the Queue and elements is the array of commands.
+  front is the index of first element (the index at which we remove the element)
+  rear is the index of last element (the index at which we insert the element) */
 
 typedef struct Queue
 {
@@ -41,6 +48,8 @@ Queue * createQueue(int maxElements)
         /* Return the pointer */
         return Q;
 }
+/* Dequeue is a function that removes the commands inside the Queue given and
+   subtracts the size and increases the front variables. */
 
 Queue * Dequeue(Queue *Q)
 {
@@ -58,6 +67,8 @@ Queue * Dequeue(Queue *Q)
         return Q;
 }
 
+/* front is a function that returns the command in the front of the Queue */
+
 char *front(Queue *Q)
 {
         if(Q->size != 0)
@@ -67,6 +78,9 @@ char *front(Queue *Q)
         return NULL;
 
 }
+
+/* Enqueue is a function that takes a Queue and a command to add the command
+   into the Queue. */
 
 void Enqueue(Queue *Q, char *command)
 {
@@ -91,6 +105,9 @@ void Enqueue(Queue *Q, char *command)
         }
         return;
 }
+
+/* Qlength is a function that returns the length of the Queue*/
+
 int Qlength(Queue *Q)
 {
         return Q->size;

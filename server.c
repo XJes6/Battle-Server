@@ -19,6 +19,9 @@
 #define STDIN 0 //STDIN
 #define MAXDATASIZE 256
 
+/*This is a struct for a Monster. It has 3 parameters
+  A Name, Health, and Physical Attack */
+
 typedef struct Monster
 {
     char* Name;
@@ -26,6 +29,9 @@ typedef struct Monster
     int PATK;
 
 }Monster;
+
+/*This is a struct for a Player. It has 5 parameters
+  A Name, Heath, Physical Attack, File Descriptor, and Defense*/
 
 typedef struct Client
 {
@@ -36,6 +42,10 @@ typedef struct Client
     int DEF;
 
 }Client;
+
+/*This function's purpose is to delay is to slow down
+  how fast the cpu sends msgs to the Clients
+  This function takes in one parameter, int */
 
 void delay(int number_of_seconds)
 {
@@ -50,14 +60,15 @@ void delay(int number_of_seconds)
         ;
 }
 
+/*This function's purpose is to generate the monster's stats */
 Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set master)
 {
     char resp[MAXDATASIZE];
-    M.Name = "Your Boi";
+    M.Name = "Slime Boss";
     M.HP = 500;
     M.PATK = 30;
     memset(resp, 0, sizeof(resp));
-    strcpy(resp, "\nMonster name: Your Boi \nAttack range: 5-10\nHealth range: 500-800\n");
+    strcpy(resp, "\nMonster name: Slime Boss \nAttack range: 5-10\nHealth range: 500-800\n");
     for(j = 0; j <= fdmax; j++)
     {
         if (FD_ISSET(j, &master)) {
@@ -69,7 +80,7 @@ Monster MonsterGen(Monster M, int i, int j, int fdmax, int listener, fd_set mast
     }
   return M;
 }
-
+/*This functions purpose is to send a message to the client when they accept the game*/
 void acceptance(int i)
 {
     char resp[MAXDATASIZE];
@@ -78,13 +89,9 @@ void acceptance(int i)
     send(i, resp, sizeof(resp), 0);
 }
 
+/*This function's purpose is to generate the Player inital stats */
 Client PlayerGen(Client P, int i, int j, int fdmax, int listener, fd_set master)
 {
-    //------------------------------
-    // DEVELOP FUNCTION FOR CLIENT STATS (ATTACK / HP)
-    // Contents for each player already made the following
-    // info will be attached once function created
-    //------------------------------
     char resp[MAXDATASIZE];
     P.HP = 100;
     P.PATK = 30;
@@ -103,7 +110,7 @@ Client PlayerGen(Client P, int i, int j, int fdmax, int listener, fd_set master)
     }
     return P;
 }
-
+/*This function's purpose is to help the system change the Player's stats after their choices */
 Client Player_stats(Queue *history, Client Player, Monster M)
 {
         //system plays
@@ -116,7 +123,7 @@ Client Player_stats(Queue *history, Client Player, Monster M)
         }
         return Player;
 }
-
+/*This function's purpose is to check if the Monster Wins or if the Clients with */
 void End_Game(Monster M, Client Player, int j, int fdmax, int listener, fd_set master, int clients, linked_list_t *fdlist)
 {
   char resp[MAXDATASIZE];
