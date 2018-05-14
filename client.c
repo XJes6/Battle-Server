@@ -119,12 +119,22 @@ int main(int argc, char *argv[])
 						memset(msg, 0, sizeof(msg));
 						msgbytes = read(STDIN, msg, sizeof(msg));
 					}
-					AcceptFlag = 1;
 					if(strcmp(msg, "Attack\n") == 0 || strcmp(msg, "Defend\n") == 0 || strcmp(msg, "Heal\n") == 0)
 					{
-						fprintf(stderr, "Please Wait for Other Players\n");
+						fprintf(stderr, "\nPlease Wait for Other Players\n");
 						FD_CLR(STDIN, &master);
 					}
+					if (AcceptFlag != 1)
+					{
+					fprintf(stderr, "- - - - - - - \nLogin Success |\n- - - - - - -\n");
+					fprintf(stderr, "Here are your options:\nAttack\nGuard\nHeal\nOptions(if you forget)\n");
+					fprintf(stderr, "\nYou have been");
+					}
+					if(strcmp(msg, "Options\n") == 0)
+					{
+						fprintf(stderr, "- - - - - \nRemember here are your options:\nAttack\nGuard\nHeal\n- - - - - \n\n");
+					}
+					AcceptFlag = 1;
 					send(sockfd, msg, msgbytes, 0);
 					if(msgbytes <= 1){close(sockfd);}
 				}
