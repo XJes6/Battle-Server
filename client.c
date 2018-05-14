@@ -1,5 +1,5 @@
 /*
-** client.c -- a stream socket client demo
+** client.c -- client to the battle server game, connects to the server.
 */
 
 #include <stdio.h>

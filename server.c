@@ -1,5 +1,5 @@
 /*
-** selectserver.c -- a cheezy multiperson chat server
+** server.c -- a battle server game with chat mechanics
 */
 
 #include <stdio.h>
