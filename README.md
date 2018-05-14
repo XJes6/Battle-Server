@@ -13,8 +13,8 @@ and must use a limited set of moves during the battle. This network game
 utilizes multiple I_O, processes concurrency to relative addresses, and take
 in input.
 ____
-
-## Program Structure and Design
+## Server.c
+### Program Structure and Design
 
 * ***typedef struct Monster{char* Name; int HP; int PATK;}****
     > This definition enables us to be able to identify and later use Monster
@@ -56,23 +56,37 @@ ____
 
 * ***int main(void)***
    > Here is where we implement the usage of Select to perform the actions of
-   the clients and servers whether that be by input or broadcasting. Select
+   the clients and servers for multiple Inputs and Outputs. Select
    typically utilizes a list of file descriptions to recognize who and what it
    is performing actions for whether it be the number of clients or for the
-   server itself (monster). Once the server and the amount of connections has
+   server itself. Once the server and the amount of connections has
    been established, the program then beings to accept up to four clients. when
    has clients have been recognized then the battle simulation commences
    where the monster and player generators are initialized. A queue is used to
    track the input of options that the clients/players choose, and Select then
    recognizes these inputs to determine who chose what behavior and enact it
-   upon the monster(server). Once the Select has discovered the action choose
-   by each client then the action is then broadcasted to all clients and to the
-   server. The server is influenced by the choice and the remaining clients are
+   upon the monster within the server. Once the Select has discovered the action chosen
+   by each client then the action is then broadcasted to all clients. 
+   The server is influenced by the choices and the remaining clients are
    simply notified. Additionally, a chat system has been developed so that
    between choosing their battle options, clients are able to communicate
-   before facing the enemy.
+   before facing the enemy. Once a choice has been chosen, that client will
+   not be able to type or chat anymore until all four are done choosing but 
+   the client can still listen to other clients.
+____
+## Client.c
+### Program Structure and Design
 
+* ***void *get_in_addr(struct sockaddr *sa)***
+   > The purpose of this function is to gather the address of the server.
 
+* ***int main(void)***
+   > Here we are essentially opening our connectoin and gathering
+   the clients who are apart of the game. The client simply uses Select by 
+   utilizing the standard in and and the information that it gathers from 
+   the server. Based on these two sources we are able to determine when there 
+   is an acception to the connection and then allow for commands such as 
+   Attack, Defend, and Heal to be collected to then be sent to the server program.
 ____
 ## Implementation Challenges
 * We struggled with ensuring all the bits were being transfered between clients.
@@ -82,6 +96,8 @@ ____
   due to the order of their input countering the other's health for said client.
 * Had issues with implementing functions for the bases of the main function due
   to our initial version of the project being done altogether.
+* We also struggled with how the server was sending messages to the clients.
+  Only a few of the clients would get the message while others would get nothing.
 ____
 ## Testing
 * Consecutively damage from Monster to reach end game (Lose)
@@ -89,10 +105,13 @@ ____
 * Checking against the properties of heal and defend to work differently
 * Ensuring chat works by putting input from each client one by one and
   making sure each person receives all comments from other clients.
+* Ensuring protocols worked correctly from the server to the client.
 ____
 
 ## Remaining Bugs
-* The are still some possible memory leaks within our program. The reference
-solution also has memory errors, and we tried to suppress all errors down to a
-minimum.
+* The are still some possible memory leaks within our program.
+  We tried to suppress all errors down to a minimum.
+* It is possible that if an alien had inhuman speed to put two inputs
+  at the same time, it may crash our game.
+* After closing the server or the game, the ending messages would repeat.
 ____
